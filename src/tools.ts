@@ -248,4 +248,42 @@ export function registerTools(server: McpServer): void {
     },
     async ({ person_id }) => ok(await core.get(`/api/people/by/${encodeURIComponent(person_id)}`)),
   );
+
+  // ── дневник (шаг 4): заметки КАК ЕСТЬ, без разбора на сущности ─────────────
+  server.registerTool(
+    "pochva_entry_add",
+    {
+      title: "Записать в дневник",
+      description:
+        "Добавить заметку в дневник КАК ЕСТЬ, текстом, без парсинга на задачи/события (это НЕ ingest). В один день можно много записей. on_date по умолчанию — сегодня.",
+      inputSchema: {
+        text: z.string().min(1).describe("Текст заметки"),
+        on_date: z.string().optional().describe("Дата записи YYYY-MM-DD (по умолчанию сегодня)"),
+      },
+    },
+    async (args) => ok(await core.post("/api/entries", args)),
+  );
+
+  server.registerTool(
+    "pochva_day",
+    {
+      title: "День",
+      description:
+        "Собранный слой дня: что произошло (закрытые задачи, события, добавленные документы) + мои записи за эту дату.",
+      inputSchema: {
+        date: z.string().optional().describe("Дата YYYY-MM-DD (по умолчанию сегодня)"),
+      },
+    },
+    async ({ date }) => ok(await core.get(`/api/entries${query({ date })}`)),
+  );
+
+  server.registerTool(
+    "pochva_entry_search",
+    {
+      title: "Поиск по записям",
+      description: "Найти записи дневника по слову или фразе.",
+      inputSchema: { query: z.string().min(1).describe("Что искать") },
+    },
+    async ({ query: q }) => ok(await core.get(`/api/entries${query({ q })}`)),
+  );
 }
