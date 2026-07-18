@@ -264,7 +264,7 @@ export function mountOAuth(app: Express): void {
     const grant = String(body.grant_type ?? "");
 
     if (!authClient(req)) {
-      res.set("WWW-Authenticate", 'Basic realm="pochva-mcp"');
+      res.set("WWW-Authenticate", 'Basic realm="opora-mcp"');
       return res.status(401).json({ error: "invalid_client" });
     }
 

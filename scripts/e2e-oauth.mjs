@@ -138,7 +138,7 @@ const FORM_HDR = { "content-type": "application/x-www-form-urlencoded" };
   // 8. /mcp с OAuth access-токеном → 200 initialize
   let good = await req("POST", RES_PATH, { headers: { ...JSON_HDR, authorization: `Bearer ${access}` }, body: initBody });
   check("/mcp с OAuth-токеном → 200", good.status === 200, String(good.status));
-  check("initialize вернул serverInfo", good.text.includes("pochva-mcp"));
+  check("initialize вернул serverInfo", good.text.includes("opora-mcp"));
 
   // 8b. подделанный токен → 401
   const tampered = access.slice(0, -2) + (access.endsWith("a") ? "b" : "a");
@@ -146,8 +146,8 @@ const FORM_HDR = { "content-type": "application/x-www-form-urlencoded" };
   check("Подделанный токен → 401", tam.status === 401, String(tam.status));
 
   // 9. статический Bearer владельца (curl/скрипты) всё ещё работает
-  if (ENV.POCHVA_MCP_INBOUND_TOKEN && !ENV.POCHVA_MCP_INBOUND_TOKEN.startsWith("CHANGE_ME")) {
-    let leg = await req("POST", RES_PATH, { headers: { ...JSON_HDR, authorization: `Bearer ${ENV.POCHVA_MCP_INBOUND_TOKEN}` }, body: initBody });
+  if (ENV.OPORA_MCP_INBOUND_TOKEN && !ENV.OPORA_MCP_INBOUND_TOKEN.startsWith("CHANGE_ME")) {
+    let leg = await req("POST", RES_PATH, { headers: { ...JSON_HDR, authorization: `Bearer ${ENV.OPORA_MCP_INBOUND_TOKEN}` }, body: initBody });
     check("Статический Bearer → 200 (curl не сломан)", leg.status === 200, String(leg.status));
   }
 

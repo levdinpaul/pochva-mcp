@@ -8,13 +8,13 @@ function ok(data: unknown) {
 }
 
 /**
- * Набор tools = тонкие обёртки над эндпоинтами pochva-core (см. контракт в README).
+ * Набор tools = тонкие обёртки над эндпоинтами opora-core (см. контракт в README).
  * Никакой бизнес-логики здесь: распарсить аргументы, вызвать ядро, вернуть ответ.
  * Контракт эндпоинтов финализируется в Фазе 1 (M3) — при расхождении правим здесь и в ядре синхронно.
  */
 export function registerTools(server: McpServer): void {
   server.registerTool(
-    "pochva_ingest",
+    "opora_ingest",
     {
       title: "Разобрать надиктовку",
       description:
@@ -25,7 +25,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_add",
+    "opora_add",
     {
       title: "Добавить явно",
       description: "Явно создать сущность, когда тип уже известен и парсер не нужен.",
@@ -41,7 +41,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_list",
+    "opora_list",
     {
       title: "Что открыто",
       description: "Открытые задачи и ближайшие события, опционально по направлению.",
@@ -54,7 +54,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_close",
+    "opora_close",
     {
       title: "Закрыть задачу",
       description: "Отметить задачу выполненной по её id.",
@@ -64,7 +64,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_digest",
+    "opora_digest",
     {
       title: "Что горит сегодня",
       description: "Сводка: задачи с датой, события и истекающие документы в горизонте.",
@@ -74,7 +74,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_doc_add",
+    "opora_doc_add",
     {
       title: "Добавить документ",
       description: "Документ (только метаданные): название, орган, номер, срок действия.",
@@ -91,7 +91,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_doc_expiring",
+    "opora_doc_expiring",
     {
       title: "Что истекает",
       description: "Документы с истекающим сроком действия.",
@@ -104,7 +104,7 @@ export function registerTools(server: McpServer): void {
 
   // ── чек-листы (M4, шаг 2): проектные списки со стойкой отметкой «сделано» ──
   server.registerTool(
-    "pochva_checklist_add",
+    "opora_checklist_add",
     {
       title: "Создать чек-лист",
       description:
@@ -119,7 +119,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_checklist_item_add",
+    "opora_checklist_item_add",
     {
       title: "Добавить пункт",
       description: "Добавить пункт в конец чек-листа.",
@@ -132,7 +132,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_checklist_item_toggle",
+    "opora_checklist_item_toggle",
     {
       title: "Отметить пункт",
       description: "Отметить/снять пункт чек-листа. Без done — переключает текущее состояние.",
@@ -145,7 +145,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_checklist_list",
+    "opora_checklist_list",
     {
       title: "Чек-листы",
       description: "Все чек-листы с пунктами (по порядку) и прогрессом «сделано/всего».",
@@ -163,7 +163,7 @@ export function registerTools(server: McpServer): void {
   };
 
   server.registerTool(
-    "pochva_update",
+    "opora_update",
     {
       title: "Изменить",
       description:
@@ -187,7 +187,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_delete",
+    "opora_delete",
     {
       title: "Удалить (мягко)",
       description:
@@ -202,7 +202,7 @@ export function registerTools(server: McpServer): void {
 
   // ── люди (шаг 3) ──────────────────────────────────────────────────────────
   server.registerTool(
-    "pochva_person_add",
+    "opora_person_add",
     {
       title: "Добавить человека",
       description: "Завести человека для тэгов (идемпотентно по имени).",
@@ -215,7 +215,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_person_list",
+    "opora_person_list",
     {
       title: "Люди",
       description: "Список людей владельца.",
@@ -225,7 +225,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_person_tag",
+    "opora_person_tag",
     {
       title: "Отметить человека",
       description: "Привязать человека к задаче или событию.",
@@ -240,7 +240,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_by_person",
+    "opora_by_person",
     {
       title: "Всё про человека",
       description: "Активные задачи и события, где человек отмечен.",
@@ -251,7 +251,7 @@ export function registerTools(server: McpServer): void {
 
   // ── дневник (шаг 4): заметки КАК ЕСТЬ, без разбора на сущности ─────────────
   server.registerTool(
-    "pochva_entry_add",
+    "opora_entry_add",
     {
       title: "Записать в дневник",
       description:
@@ -265,7 +265,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_day",
+    "opora_day",
     {
       title: "День",
       description:
@@ -278,7 +278,7 @@ export function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
-    "pochva_entry_search",
+    "opora_entry_search",
     {
       title: "Поиск по записям",
       description: "Найти записи дневника по слову или фразе.",

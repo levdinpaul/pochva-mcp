@@ -1,8 +1,8 @@
 import { CONFIG } from "./config.js";
 
 /**
- * Единственный путь MCP к данным — HTTP к pochva-core. В БД напрямую НЕ ходим:
- * вся RLS, валидация и парсинг живут в ядре. На выходе — сервисный Bearer POCHVA_MCP_TOKEN.
+ * Единственный путь MCP к данным — HTTP к opora-core. В БД напрямую НЕ ходим:
+ * вся RLS, валидация и парсинг живут в ядре. На выходе — сервисный Bearer OPORA_MCP_TOKEN.
  */
 async function call(method: string, path: string, body?: unknown): Promise<unknown> {
   let res: Response;
@@ -17,7 +17,7 @@ async function call(method: string, path: string, body?: unknown): Promise<unkno
       signal: AbortSignal.timeout(30_000),
     });
   } catch (e) {
-    throw new Error(`pochva-core недоступен (${method} ${path}): ${(e as Error).message}`);
+    throw new Error(`opora-core недоступен (${method} ${path}): ${(e as Error).message}`);
   }
   const text = await res.text();
   let data: unknown = null;
@@ -30,7 +30,7 @@ async function call(method: string, path: string, body?: unknown): Promise<unkno
   }
   if (!res.ok) {
     const msg = (data as { error?: string } | null)?.error ?? res.statusText;
-    throw new Error(`pochva-core ${method} ${path} → ${res.status}: ${msg}`);
+    throw new Error(`opora-core ${method} ${path} → ${res.status}: ${msg}`);
   }
   return data;
 }

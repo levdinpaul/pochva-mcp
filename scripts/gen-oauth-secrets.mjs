@@ -18,9 +18,9 @@ const ENV_PATH = join(HERE, "..", ".env");
 const HANDOVER = join(homedir(), "pochva-oauth-connector.txt");
 const FORCE = process.argv.includes("--force");
 
-const ISSUER = process.env.POCHVA_MCP_OAUTH_ISSUER ?? "https://d.pavellevdin.ru";
-const RESOURCE = process.env.POCHVA_MCP_OAUTH_RESOURCE ?? "https://d.pavellevdin.ru/mcp";
-const OWNER = process.env.POCHVA_MCP_OWNER_SUB ?? "levdin.pavel@yandex.ru";
+const ISSUER = process.env.OPORA_MCP_OAUTH_ISSUER ?? "https://d.pavellevdin.ru";
+const RESOURCE = process.env.OPORA_MCP_OAUTH_RESOURCE ?? "https://d.pavellevdin.ru/mcp";
+const OWNER = process.env.OPORA_MCP_OWNER_SUB ?? "levdin.pavel@yandex.ru";
 
 // ── читаем текущий .env ───────────────────────────────────────────────────────
 if (!existsSync(ENV_PATH)) {
@@ -39,16 +39,16 @@ const isSet = (k) => {
 };
 
 const alreadyActive =
-  isSet("POCHVA_MCP_OAUTH_CLIENT_SECRET") &&
-  isSet("POCHVA_MCP_OAUTH_SIGNING_KEY") &&
-  isSet("POCHVA_MCP_OAUTH_PASSWORD_HASH");
+  isSet("OPORA_MCP_OAUTH_CLIENT_SECRET") &&
+  isSet("OPORA_MCP_OAUTH_SIGNING_KEY") &&
+  isSet("OPORA_MCP_OAUTH_PASSWORD_HASH");
 if (alreadyActive && !FORCE) {
   console.error("OAuth уже настроен. Ротация затрёт токены и кодовую фразу. Повтори с --force, если это осознанно.");
   process.exit(2);
 }
 
 // ── генерация ─────────────────────────────────────────────────────────────────
-const clientId = "pochva-mcp-" + randomBytes(6).toString("hex");
+const clientId = "opora-mcp-" + randomBytes(6).toString("hex");
 const clientSecret = randomBytes(32).toString("base64url");
 const signingKey = randomBytes(48).toString("hex");
 
@@ -65,20 +65,20 @@ const hash = scryptSync(passphrase, salt, 32, { N, r, p, maxmem: 128 * 1024 * 10
 const passwordHash = `scrypt:${N}:${r}:${p}:${salt.toString("base64url")}:${hash.toString("base64url")}`;
 
 // Поколение токенов: сохраняем текущее (ротация ключа и так инвалидирует), иначе 1.
-const tokenGen = getVal("POCHVA_MCP_OAUTH_TOKEN_GEN") || "1";
+const tokenGen = getVal("OPORA_MCP_OAUTH_TOKEN_GEN") || "1";
 
 // ── перезаписываем управляемые ключи в .env, остальное не трогаем ─────────────
 const MANAGED = {
-  POCHVA_MCP_OAUTH_ISSUER: ISSUER,
-  POCHVA_MCP_OAUTH_RESOURCE: RESOURCE,
-  POCHVA_MCP_OWNER_SUB: OWNER,
-  POCHVA_MCP_OAUTH_CLIENT_ID: clientId,
-  POCHVA_MCP_OAUTH_CLIENT_SECRET: clientSecret,
-  POCHVA_MCP_OAUTH_SIGNING_KEY: signingKey,
-  POCHVA_MCP_OAUTH_PASSWORD_HASH: passwordHash,
-  POCHVA_MCP_OAUTH_TOKEN_GEN: tokenGen,
-  POCHVA_MCP_OAUTH_ACCESS_TTL: getVal("POCHVA_MCP_OAUTH_ACCESS_TTL") || "3600",
-  POCHVA_MCP_OAUTH_REFRESH_TTL: getVal("POCHVA_MCP_OAUTH_REFRESH_TTL") || "7776000",
+  OPORA_MCP_OAUTH_ISSUER: ISSUER,
+  OPORA_MCP_OAUTH_RESOURCE: RESOURCE,
+  OPORA_MCP_OWNER_SUB: OWNER,
+  OPORA_MCP_OAUTH_CLIENT_ID: clientId,
+  OPORA_MCP_OAUTH_CLIENT_SECRET: clientSecret,
+  OPORA_MCP_OAUTH_SIGNING_KEY: signingKey,
+  OPORA_MCP_OAUTH_PASSWORD_HASH: passwordHash,
+  OPORA_MCP_OAUTH_TOKEN_GEN: tokenGen,
+  OPORA_MCP_OAUTH_ACCESS_TTL: getVal("OPORA_MCP_OAUTH_ACCESS_TTL") || "3600",
+  OPORA_MCP_OAUTH_REFRESH_TTL: getVal("OPORA_MCP_OAUTH_REFRESH_TTL") || "7776000",
 };
 const managedKeys = new Set(Object.keys(MANAGED));
 const kept = lines.filter((l) => {

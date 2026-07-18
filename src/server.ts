@@ -66,7 +66,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
   }
 
   // Stateless: свой server+transport на запрос. Для одного пользователя дёшево и без сессий/SSE.
-  const server = new McpServer({ name: "pochva-mcp", version: "0.1.0" });
+  const server = new McpServer({ name: "opora-mcp", version: "0.1.0" });
   registerTools(server);
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on("close", () => {
