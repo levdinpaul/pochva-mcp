@@ -153,4 +153,99 @@ export function registerTools(server: McpServer): void {
     },
     async () => ok(await core.get("/api/checklists")),
   );
+
+  // ── обновление / мягкое удаление (шаг 3) ──────────────────────────────────
+  const PLURAL: Record<string, string> = {
+    task: "tasks",
+    event: "events",
+    document: "documents",
+    checklist: "checklists",
+  };
+
+  server.registerTool(
+    "pochva_update",
+    {
+      title: "Изменить",
+      description:
+        "Частично обновить задачу/событие/документ — только переданные поля. Для события text — это заголовок; для документа text — название.",
+      inputSchema: {
+        kind: z.enum(["task", "event", "document"]).describe("Тип сущности"),
+        id: z.string().describe("id сущности"),
+        text: z.string().optional().describe("Текст задачи / заголовок события / название документа"),
+        direction: z.string().optional().describe("Код направления"),
+        size: z.enum(["big", "small"]).optional().describe("Размер задачи"),
+        due: z.string().optional().describe("Срок задачи YYYY-MM-DD (пусто — снять)"),
+        starts_at: z.string().optional().describe("Начало события «YYYY-MM-DD HH:MM»"),
+        all_day: z.boolean().optional().describe("Событие на весь день"),
+        status: z.string().optional().describe("Статус документа (valid/in_progress/expired/replaced)"),
+        note: z.string().optional().describe("Заметка документа"),
+        expires_on: z.string().optional().describe("Срок действия документа YYYY-MM-DD"),
+      },
+    },
+    async ({ kind, id, ...fields }) =>
+      ok(await core.patch(`/api/${PLURAL[kind]}/${encodeURIComponent(id)}`, fields)),
+  );
+
+  server.registerTool(
+    "pochva_delete",
+    {
+      title: "Удалить (мягко)",
+      description:
+        "Мягко удалить задачу/событие/документ/чек-лист (deleted_at). Не стирается физически — можно восстановить.",
+      inputSchema: {
+        kind: z.enum(["task", "event", "document", "checklist"]).describe("Тип сущности"),
+        id: z.string().describe("id сущности"),
+      },
+    },
+    async ({ kind, id }) => ok(await core.del(`/api/${PLURAL[kind]}/${encodeURIComponent(id)}`)),
+  );
+
+  // ── люди (шаг 3) ──────────────────────────────────────────────────────────
+  server.registerTool(
+    "pochva_person_add",
+    {
+      title: "Добавить человека",
+      description: "Завести человека для тэгов (идемпотентно по имени).",
+      inputSchema: {
+        name: z.string().min(1).describe("Имя человека"),
+        note: z.string().optional().describe("Заметка"),
+      },
+    },
+    async (args) => ok(await core.post("/api/people", args)),
+  );
+
+  server.registerTool(
+    "pochva_person_list",
+    {
+      title: "Люди",
+      description: "Список людей владельца.",
+      inputSchema: {},
+    },
+    async () => ok(await core.get("/api/people")),
+  );
+
+  server.registerTool(
+    "pochva_person_tag",
+    {
+      title: "Отметить человека",
+      description: "Привязать человека к задаче или событию.",
+      inputSchema: {
+        person_id: z.string().describe("id человека"),
+        kind: z.enum(["task", "event"]).describe("Тип: task или event"),
+        id: z.string().describe("id задачи/события"),
+      },
+    },
+    async ({ person_id, kind, id }) =>
+      ok(await core.post("/api/people/tag", { person_id, item_type: kind, item_id: id })),
+  );
+
+  server.registerTool(
+    "pochva_by_person",
+    {
+      title: "Всё про человека",
+      description: "Активные задачи и события, где человек отмечен.",
+      inputSchema: { person_id: z.string().describe("id человека") },
+    },
+    async ({ person_id }) => ok(await core.get(`/api/people/by/${encodeURIComponent(person_id)}`)),
+  );
 }

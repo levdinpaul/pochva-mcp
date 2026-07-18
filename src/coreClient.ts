@@ -38,6 +38,8 @@ async function call(method: string, path: string, body?: unknown): Promise<unkno
 export const core = {
   get: (path: string) => call("GET", path),
   post: (path: string, body?: unknown) => call("POST", path, body),
+  patch: (path: string, body?: unknown) => call("PATCH", path, body),
+  del: (path: string, body?: unknown) => call("DELETE", path, body),
 };
 
 /** Отбросить null/undefined и собрать query-строку. */
