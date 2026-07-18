@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+*.log
+# Секреты — только в .env (chmod 600), в git НИКОГДА. .env.sample (плейсхолдеры) коммитим.
+.env
+.env.local
+.env.*.local

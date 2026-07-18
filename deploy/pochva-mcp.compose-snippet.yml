@@ -1,0 +1,24 @@
+# Фаза 4 (деплой): вмерджить сервис в pochva-core/docker-compose.yml.
+# pochva-mcp — ЕДИНСТВЕННЫЙ мост между контурами: он на ДВУХ сетях.
+# pochva-core при этом на vl-network НЕ возвращается (контракт).
+
+services:
+  pochva-mcp:
+    build: ../pochva-mcp
+    image: pochva-mcp:latest
+    container_name: pochva-mcp
+    restart: unless-stopped
+    env_file:
+      - ../pochva-mcp/.env
+    networks:
+      - pochva-network   # → http://pochva-core:3000 (выход к ядру)
+      - vl-network       # ← vl-nginx проксирует /mcp. Порт наружу НЕ открываем.
+    depends_on:
+      pochva-core:
+        condition: service_healthy
+
+# В секцию networks: pochva-core/docker-compose.yml добавить внешнюю vl-network:
+networks:
+  vl-network:
+    external: true
+    name: vl-innovativbau_vl-network   # проверить точное имя: docker network ls | grep vl
