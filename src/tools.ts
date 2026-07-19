@@ -31,13 +31,42 @@ export function registerTools(server: McpServer): void {
       description: "Явно создать сущность, когда тип уже известен и парсер не нужен.",
       inputSchema: {
         type: z.enum(["task", "document", "event", "entry"]).describe("Тип сущности"),
-        text: z.string().optional().describe("Текст задачи/записи"),
+        text: z.string().optional().describe("Текст задачи/записи, заголовок события или название документа"),
         direction: z.string().optional().describe("Код направления (doc/home/lang/money/kids/self)"),
-        date: z.string().optional().describe("Дата YYYY-MM-DD (для задачи — due)"),
+        date: z.string().optional().describe("Дата YYYY-MM-DD: задача to due, документ to expires_on, запись to on_date, событие без времени to день"),
         size: z.enum(["big", "small"]).optional().describe("Размер задачи"),
+        starts_at: z.string().optional().describe("Событие: начало «YYYY-MM-DD HH:MM» (Europe/Berlin) или ISO"),
+        ends_at: z.string().optional().describe("Событие: конец"),
+        location: z.string().optional().describe("Событие: место"),
+        all_day: z.boolean().optional().describe("Событие на весь день"),
       },
     },
-    async (args) => ok(await core.post("/api/items", args)),
+    async (a) => {
+      let body: Record<string, unknown>;
+      switch (a.type) {
+        case "event": {
+          body = {
+            type: "event",
+            title: a.text,
+            starts_at: a.starts_at ?? a.date,
+            ends_at: a.ends_at,
+            location: a.location,
+            direction: a.direction,
+            all_day: a.all_day ?? (!a.starts_at && !!a.date),
+          };
+          break;
+        }
+        case "document":
+          body = { type: "document", title: a.text, direction: a.direction, expires_on: a.date };
+          break;
+        case "entry":
+          body = { type: "entry", text: a.text, on_date: a.date };
+          break;
+        default:
+          body = { type: "task", text: a.text, direction: a.direction, size: a.size, due: a.date };
+      }
+      return ok(await core.post("/api/items", body));
+    },
   );
 
   server.registerTool(
@@ -285,5 +314,28 @@ export function registerTools(server: McpServer): void {
       inputSchema: { query: z.string().min(1).describe("Что искать") },
     },
     async ({ query: q }) => ok(await core.get(`/api/entries${query({ q })}`)),
+  );
+
+  server.registerTool(
+    "opora_practice_add",
+    {
+      title: "Добавить практику",
+      description: "Создать ежедневную практику (повторяющееся действие).",
+      inputSchema: {
+        text: z.string().describe("Текст практики"),
+        direction: z.string().optional().describe("Код направления (doc/home/lang/money/kids/self)"),
+      },
+    },
+    async (a) => ok(await core.post("/api/practices", { text: a.text, direction: a.direction })),
+  );
+
+  server.registerTool(
+    "opora_stats",
+    {
+      title: "Статистика",
+      description: "Сводка: задачи по неделям, стрики практик, нагрузка по направлениям, плотность терминов.",
+      inputSchema: {},
+    },
+    async () => ok(await core.get("/api/stats")),
   );
 }
