@@ -399,6 +399,19 @@ export function registerTools(server: McpServer): void {
     async (args) => ok(await core.get(`/api/money/stats${query(args)}`)),
   );
 
+  // ── удаление операции (доводка): закрыть дыру «финансы нельзя удалить штатно» ──
+  server.registerTool(
+    "opora_money_delete",
+    {
+      title: "Удалить операцию",
+      description: "Мягко удалить операцию дохода/расхода по её id (deleted_at, физически не стирается). Для чистки ошибочных или тестовых трат — штатно, без прямого доступа к БД.",
+      inputSchema: {
+        id: z.string().describe("id операции (transactions.id)"),
+      },
+    },
+    async ({ id }) => ok(await core.del(`/api/money/${encodeURIComponent(id)}`)),
+  );
+
   // ── практики (ЭТАП 3): отметить голосом + аналитика (heatmap/стрики) ──
   server.registerTool(
     "opora_practice_mark",
