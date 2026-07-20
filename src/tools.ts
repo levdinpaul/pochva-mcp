@@ -438,4 +438,19 @@ export function registerTools(server: McpServer): void {
     },
     async () => ok(await core.get("/api/practices/stats")),
   );
+
+  // ── лимит категории (Хотелка 2): месячный лимит трат надиктовкой ──
+  server.registerTool(
+    "opora_budget_limit_set",
+    {
+      title: "Лимит категории",
+      description:
+        "Задать месячный лимит трат на категорию: «лимит на еду 400 в месяц» → category:«еда», amount:400 (в ЕВРО). Категория по названию (создаётся, если новой). amount:0 — снять лимит. Трату не блокирует, только индикация в Аналитике.",
+      inputSchema: {
+        category: z.string().min(1).describe("Название категории, напр. «еда», «продукты»"),
+        amount: z.number().describe("Лимит в ЕВРО в месяц (0 — снять лимит)"),
+      },
+    },
+    async (args) => ok(await core.post("/api/budget/limit", args)),
+  );
 }
