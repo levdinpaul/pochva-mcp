@@ -383,4 +383,19 @@ export function registerTools(server: McpServer): void {
       return ok(await core.post("/api/money", body));
     },
   );
+
+  // ── аналитика денег: сводка + категории + динамика за период (для голосовых вопросов) ──
+  server.registerTool(
+    "opora_money_stats",
+    {
+      title: "Аналитика денег",
+      description:
+        "Сводка + расходы по категориям (доля %) + динамика по месяцам за период. Чтобы ответить «сколько потратил на еду в этом месяце». mode: month|year (по умолчанию месяц), period: YYYY-MM или YYYY (по умолчанию текущий).",
+      inputSchema: {
+        mode: z.enum(["month", "year"]).optional().describe("Период: месяц или год (по умолчанию месяц)"),
+        period: z.string().optional().describe("YYYY-MM (месяц) или YYYY (год); по умолчанию текущий"),
+      },
+    },
+    async (args) => ok(await core.get(`/api/money/stats${query(args)}`)),
+  );
 }
