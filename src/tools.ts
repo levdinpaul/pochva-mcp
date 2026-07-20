@@ -8,6 +8,22 @@ function ok(data: unknown) {
 }
 
 /**
+ * Грубый разбор фразы надиктовки денег: сумма (€), тип (доход/расход), категория (после «на»/«за»).
+ * Это шейпинг аргумента в структуру /api/money (как switch в opora_add), а не логика ядра —
+ * центы, RLS и матч категории живут в opora-core.
+ */
+function parseMoneyText(text: string): { kind: "income" | "expense"; amount: number | null; category: string | null } {
+  const t = text.toLowerCase();
+  const income = /(получил|доход|зарплат|аванс|пособи|b[\u00fcu]rgergeld|начислен|вернул|к[эе]шбэк|преми|плюс|\+)/.test(t);
+  const m = t.match(/(\d+(?:[.,]\d{1,2})?)/);
+  const amount = m ? Number(m[1].replace(",", ".")) : null;
+  let category: string | null = null;
+  const c = text.match(/(?:^|\s)(?:на|за)\s+([A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё\- ]*?)\s*$/i);
+  if (c) category = c[1].trim();
+  return { kind: income ? "income" : "expense", amount, category };
+}
+
+/**
  * Набор tools = тонкие обёртки над эндпоинтами opora-core (см. контракт в README).
  * Никакой бизнес-логики здесь: распарсить аргументы, вызвать ядро, вернуть ответ.
  * Контракт эндпоинтов финализируется в Фазе 1 (M3) — при расхождении правим здесь и в ядре синхронно.
@@ -337,5 +353,34 @@ export function registerTools(server: McpServer): void {
       inputSchema: {},
     },
     async () => ok(await core.get("/api/stats")),
+  );
+
+  // ── деньги (ЭТАП 1): доход/расход надиктовкой → /api/money (opora-core) ──
+  server.registerTool(
+    "opora_money_add",
+    {
+      title: "Записать деньги",
+      description:
+        "Доход или расход надиктовкой. «потратил 40 евро на продукты» → расход 40 €, категория «продукты». «получил 1500 зарплата» → доход. Сумма в евро; категория по названию (создаётся, если новая). По умолчанию тип — расход.",
+      inputSchema: {
+        text: z.string().min(1).describe("Фраза: «потратил 40 евро на продукты», «получил 1500 зарплата»"),
+        kind: z.enum(["income", "expense"]).optional().describe("Явно доход/расход (иначе определяется по тексту)"),
+        amount: z.number().optional().describe("Сумма в евро (иначе берётся из текста)"),
+        category: z.string().optional().describe("Категория явно (иначе из текста)"),
+        on_date: z.string().optional().describe("Дата операции YYYY-MM-DD (по умолчанию сегодня)"),
+        note: z.string().optional().describe("Заметка (по умолчанию — исходная фраза)"),
+      },
+    },
+    async (args) => {
+      const p = parseMoneyText(args.text);
+      const body = {
+        kind: args.kind ?? p.kind,
+        amount: args.amount ?? p.amount ?? undefined,
+        category: args.category ?? p.category ?? undefined,
+        on_date: args.on_date,
+        note: args.note ?? args.text,
+      };
+      return ok(await core.post("/api/money", body));
+    },
   );
 }
