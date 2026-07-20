@@ -398,4 +398,31 @@ export function registerTools(server: McpServer): void {
     },
     async (args) => ok(await core.get(`/api/money/stats${query(args)}`)),
   );
+
+  // ── практики (ЭТАП 3): отметить голосом + аналитика (heatmap/стрики) ──
+  server.registerTool(
+    "opora_practice_mark",
+    {
+      title: "Отметить практику",
+      description:
+        "Отметить выполнение практики надиктовкой: «сделал зарядку» → отметка на сегодня. Практика ищется по названию; если такой нет — заводится. date — задним числом (YYYY-MM-DD); done:false — снять отметку.",
+      inputSchema: {
+        practice: z.string().min(1).describe("Название практики, напр. «зарядка», «прогулка»"),
+        date: z.string().optional().describe("Дата YYYY-MM-DD (по умолчанию сегодня)"),
+        done: z.boolean().optional().describe("false — снять отметку (по умолчанию отметить)"),
+      },
+    },
+    async (args) => ok(await core.post("/api/practices/mark", args)),
+  );
+
+  server.registerTool(
+    "opora_practice_stats",
+    {
+      title: "Стрики практик",
+      description:
+        "По каждой практике: текущий и максимальный стрик, отметок за месяц, даты отметок за год (heatmap). Чтобы ответить «какой у меня стрик по прогулке».",
+      inputSchema: {},
+    },
+    async () => ok(await core.get("/api/practices/stats")),
+  );
 }
