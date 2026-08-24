@@ -245,54 +245,20 @@ export function registerTools(server: McpServer): void {
     async ({ kind, id }) => ok(await core.del(`/api/${PLURAL[kind]}/${encodeURIComponent(id)}`)),
   );
 
-  // ── люди (шаг 3) ──────────────────────────────────────────────────────────
-  server.registerTool(
-    "opora_person_add",
-    {
-      title: "Добавить человека",
-      description: "Завести человека для тэгов (идемпотентно по имени).",
-      inputSchema: {
-        name: z.string().min(1).describe("Имя человека"),
-        note: z.string().optional().describe("Заметка"),
-      },
-    },
-    async (args) => ok(await core.post("/api/people", args)),
-  );
-
-  server.registerTool(
-    "opora_person_list",
-    {
-      title: "Люди",
-      description: "Список людей владельца.",
-      inputSchema: {},
-    },
-    async () => ok(await core.get("/api/people")),
-  );
-
-  server.registerTool(
-    "opora_person_tag",
-    {
-      title: "Отметить человека",
-      description: "Привязать человека к задаче или событию.",
-      inputSchema: {
-        person_id: z.string().describe("id человека"),
-        kind: z.enum(["task", "event"]).describe("Тип: task или event"),
-        id: z.string().describe("id задачи/события"),
-      },
-    },
-    async ({ person_id, kind, id }) =>
-      ok(await core.post("/api/people/tag", { person_id, item_type: kind, item_id: id })),
-  );
-
-  server.registerTool(
-    "opora_by_person",
-    {
-      title: "Всё про человека",
-      description: "Активные задачи и события, где человек отмечен.",
-      inputSchema: { person_id: z.string().describe("id человека") },
-    },
-    async ({ person_id }) => ok(await core.get(`/api/people/by/${encodeURIComponent(person_id)}`)),
-  );
+  // ── люди ──────────────────────────────────────────────────────────────────
+  //
+  // ЧЕТЫРЕ ИНСТРУМЕНТА СНЯТЫ 24.08.2026: `opora_person_add`, `opora_person_list`,
+  // `opora_person_tag`, `opora_by_person`. Все четверо ходили в `/api/people/*`, а те — в
+  // легаси-таблицы `people` / `item_people`, снесённые миграцией 0074. Живая ось людей лежит в
+  // `categories kind='person'` и с этими маршрутами не пересекалась ни одной строкой: связи,
+  // заведённые через `opora_person_tag`, не появлялись ни в фильтре, ни на карточках.
+  //
+  // Инструмент, который принимает вызов и молча пишет в никуда, хуже отсутствующего: он
+  // отвечает «ок». Поэтому сняты целиком, а не заглушены.
+  //
+  // ЗАМЕНЫ ПОКА НЕТ, и это осознанно. Ось людей в кабинете правится в форме записи, а через MCP
+  // за неё отвечает разбор надиктовки (`opora_ingest`). Отдельный инструмент тэгирования по
+  // живой оси заведём, когда он понадобится, — а не затем, чтобы сохранить прежнее имя.
 
   // ── дневник (шаг 4): заметки КАК ЕСТЬ, без разбора на сущности ─────────────
   server.registerTool(
