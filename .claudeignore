@@ -1,0 +1,13 @@
+# Что Claude не читать целиком (prompt-31). Принудительно — permissions.deny в ~/.claude/settings.json.
+node_modules/
+dist/
+build/
+.cache/
+coverage/
+package-lock.json
+*.lock
+.env
+.env.*
+!.env.sample
+*.log
+*.tsbuildinfo
