@@ -1,40 +1,63 @@
 # pochva-mcp
 
-Тонкий remote-MCP над **pochva-core API** для надиктовки из Claude (телефон/десктоп).
-В БД напрямую НЕ ходит: вся RLS, валидация и парсинг — в ядре. MCP только транслирует
-вызовы tools в HTTP-запросы к `pochva-core`.
+**A thin, stateless MCP (Model Context Protocol) server** that bridges Claude AI and the Opora / Vestora Life personal life-tracker backend.
 
-## Границы (два рубежа auth — не смешивать)
-- **Вход `/mcp`**: Bearer владельца (`POCHVA_MCP_INBOUND_TOKEN`). Телефон/Claude → MCP.
-- **Выход к ядру**: сервисный токен (`POCHVA_MCP_TOKEN`). MCP → `pochva-core`.
-- Компрометация одного токена не даёт второго. Оба отзываются независимо.
-- НЕ переиспользует GitHub-OAuth от `vl-vps-mcp` (то — админский MCP другого контура).
+Dictate tasks, deadlines, and notes to Claude — it forwards them through this MCP server to the core API, which parses and stores them. The server never touches the database directly; all validation, RLS, and entity parsing live in the core.
 
-## Сеть
-- Контейнер на `pochva-network` (→ `http://pochva-core:3000`) **и** `vl-network` (← `vl-nginx`
-  проксирует `/mcp`). Порт наружу НЕ публикуется. Публично — только `https://d.pavellevdin.ru/mcp`.
+## Architecture
 
-## Транспорт
-- MCP Streamable HTTP (`@modelcontextprotocol/sdk`), stateless. Только JSON, без HTML/сессий/форм.
-- Rate limit + аудит факта каждого вызова (тело/ПДн в лог не пишем).
-
-## Tools → контракт эндпоинтов ядра (M3, финализируется в Фазе 1)
-| tool | метод + путь | назначение |
-|---|---|---|
-| `pochva_ingest` | `POST /api/ingest` `{text}` | текст → сущности (Gemini→NVIDIA) |
-| `pochva_add` | `POST /api/items` `{type,...}` | явно создать task/deadline/document/event/entry |
-| `pochva_list` | `GET /api/list?direction=&status=` | что открыто |
-| `pochva_close` | `POST /api/tasks/:id/close` | закрыть задачу |
-| `pochva_digest` | `GET /api/digest` | что горит сегодня |
-| `pochva_doc_add` | `POST /api/documents` | документ (метаданные) |
-| `pochva_doc_expiring` | `GET /api/documents/expiring?within=30` | что истекает |
-
-Все эндпоинты — Bearer (`api_tokens`, SHA-256), резолвятся в единственного владельца → `withUser()`.
-
-## Локально
-```bash
-npm install
-cp .env.sample .env    # заполнить токены, chmod 600
-npm run typecheck
-npm run dev            # слушает :8788, POST /mcp
 ```
+Claude (phone / desktop)
+        │  Bearer token (inbound)
+        ▼
+  pochva-mcp   ◄─── this repo
+        │  Service token (outbound)
+        ▼
+  pochva-core API
+        │
+        ▼
+  PostgreSQL
+```
+
+Two independent auth boundaries — compromising one token does not expose the other.
+
+## Tools exposed to Claude
+
+| Tool | Endpoint | Description |
+|---|---|---|
+| `pochva_ingest` | `POST /api/ingest` | Free-text → parsed entities (AI pipeline) |
+| `pochva_add` | `POST /api/items` | Explicitly create task / deadline / document / event / entry |
+| `pochva_list` | `GET /api/list` | List open items by direction/status |
+| `pochva_close` | `POST /api/tasks/:id/close` | Close a task |
+| `pochva_digest` | `GET /api/digest` | What's urgent today |
+| `pochva_doc_add` | `POST /api/documents` | Add a document (metadata) |
+| `pochva_doc_expiring` | `GET /api/documents/expiring` | Documents expiring within N days |
+
+## Stack
+
+- **Runtime:** Node.js 20, TypeScript
+- **MCP transport:** Streamable HTTP (stateless) via `@modelcontextprotocol/sdk`
+- **Deployment:** Docker, behind nginx reverse proxy
+- **Auth:** Bearer tokens (SHA-256), OAuth 2.0 for Claude connector
+
+## Quick start
+
+```bash
+git clone https://github.com/levdinpaul/pochva-mcp.git
+cd pochva-mcp
+npm install
+cp sample.txt myconfig   # rename .env.sample → fill in your tokens
+npm run dev              # listens on :8788, POST /mcp
+```
+
+See `.env.sample` for all required environment variables.
+
+## Security
+
+- Inbound token (Claude → MCP) and outbound service token (MCP → core) are separate and independently revocable.
+- The server port is never exposed publicly — only routed via nginx at `https://your-domain/mcp`.
+- No request body or personal data is written to logs (only the fact of each call is audited).
+
+## License
+
+MIT © Pavel Levdin — https://pavellevdin.ru
